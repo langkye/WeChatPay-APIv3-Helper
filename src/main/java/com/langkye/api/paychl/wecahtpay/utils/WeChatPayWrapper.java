@@ -22,6 +22,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -42,6 +43,8 @@ import java.security.*;
 import java.security.cert.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -84,42 +87,22 @@ public class WeChatPayWrapper {
      * 特约商户进件: 提交申请单API
      * @doc https://pay.weixin.qq.com/wiki/doc/apiv3/wxpay/tool/applyment4sub/chapter3_1.shtml
      */
-    public static String applyment(Root root) throws Exception {
-        //获取商户证书序列号
-        String serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.MCH_PUB_KEY_PATH);
-
+    public String applyment(Root root) {
         //加密参数
-        root = EncryptRootField.toEncrypt(root);
+        try {
+            root = EncryptRootField.toEncrypt(root);
 
-        //将驼峰转下划线
-        SerializeConfig config = new SerializeConfig();
-        config.propertyNamingStrategy = PropertyNamingStrategy.SnakeCase;
-        String requestParams = JSON.toJSONString(root, config);
+            //将驼峰转下划线
+            SerializeConfig config = new SerializeConfig();
+            config.propertyNamingStrategy = PropertyNamingStrategy.SnakeCase;
+            String requestParams = JSON.toJSONString(root, config);
 
-        String token = WeChatPayWrapper.getToken("POST", WECHATPAY_INCOMING_URL, requestParams, MCH_ID, serialNo);
-        String authorization = "WECHATPAY2-SHA256-RSA2048 " + token;
-
-        //微信证书路径，获取微信证书序列号
-        serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.WECHATPAY_PUB_KEY_PATH);
-
-        //组装请求头、请求参数并发起请求
-        HttpPost httpPost = new HttpPost(WECHATPAY_INCOMING_URL);
-        httpPost.setHeader("Wechatpay-Serial", serialNo);
-        httpPost.setHeader("Accept", "application/json");
-        httpPost.setHeader("Content-Type", "application/json");
-        httpPost.setHeader("user-agent", WeChatPayWrapper.DEFAULT_USER_AGENT);
-        httpPost.setHeader("Authorization", authorization);
-        httpPost.setEntity(new StringEntity(requestParams, "UTF-8"));
-        HttpClientBuilder httpClientBuilder = HttpClients.custom();
-        CloseableHttpClient httpClient = httpClientBuilder.build();
-        CloseableHttpResponse httpResponse = httpClient.execute(httpPost);
-
-        //获取响应文本
-        HttpEntity httpResponseEntity = httpResponse.getEntity();
-        String responseEntityStr = EntityUtils.toString(httpResponseEntity);
-        httpResponse.close();
-
-        return responseEntityStr;
+            return sendPost(requestParams,WECHATPAY_INCOMING_URL);
+        } catch (IOException e) {
+            throw new RuntimeException("请求失败！",e);
+        } catch (IllegalBlockSizeException e) {
+            throw new RuntimeException("请求失败！",e);
+        }
     }
 
     /**
@@ -131,40 +114,18 @@ public class WeChatPayWrapper {
      * @throws Exception
      * @see ApplymentQueryType
      */
-    public static String applymentStatus(String arg, ApplymentQueryType aqType) throws Exception {
+    public String applymentStatus(String arg, ApplymentQueryType aqType) {
         String url = "";
-        //String url = "https://api.mch.weixin.qq.com/v3/applyment4sub/applyment/applyment_id/微信支付分配的申请单号";
         if (ApplymentQueryType.APPLYMENT_ID.equals(aqType)) {
-            url = WeChatPayWrapper.WECHATPAY_QUERY_STATUS_APPLYMENT_ID_URL + "/" + arg;
+            url = WeChatPayWrapper.WECHATPAY_QUERY_STATUS_APPLYMENT_ID_URL;
         } else {
-            url = WeChatPayWrapper.WECHATPAY_QUERY_STATUS_BUSINESS_CODE_URL + "/" + arg;
+            url = WeChatPayWrapper.WECHATPAY_QUERY_STATUS_BUSINESS_CODE_URL;
         }
-
-        //获取商户证书序列号
-        String serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.MCH_PUB_KEY_PATH);
-        String token = WeChatPayWrapper.getToken("GET", url, null, WeChatPayWrapper.MCH_ID, serialNo);
-        String authorization = "WECHATPAY2-SHA256-RSA2048 " + token;
-
-        //平台证书路径, 获取微信证书序列号
-        serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.WECHATPAY_PUB_KEY_PATH);
-
-        //设置请求头，请求参数并发起请求
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.setHeader("Wechatpay-Serial", serialNo);
-        httpGet.setHeader("Accept", "application/json");
-        httpGet.setHeader("Content-Type", "application/json");
-        httpGet.setHeader("user-agent", WeChatPayWrapper.DEFAULT_USER_AGENT);
-        httpGet.setHeader("Authorization", authorization);
-        HttpClientBuilder httpClientBuilder = HttpClients.custom();
-        CloseableHttpClient httpClient = httpClientBuilder.build();
-        CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
-
-        //解析响应，返回字符串
-        HttpEntity httpResponseEntity = httpResponse.getEntity();
-        String responseEntityStr = EntityUtils.toString(httpResponseEntity);
-        httpResponse.close();
-
-        return responseEntityStr;
+        try {
+            return sendGet(arg,url);
+        } catch (IOException e) {
+            throw new RuntimeException("请求失败！：",e);
+        }
     }
 
 
@@ -175,7 +136,7 @@ public class WeChatPayWrapper {
      * @param imageUrl 本地图片路径 或 网络图片url（大小2M以内）
      * @return example: {"media_id":"DzLwIk1vPNqvZuCZ0-zZnGmz4tyyErUSdoVSfaODHOXNKs26X3ILcgsX5cZ6yIGvjZm2VhL3fyhgAEcB3jlfKgxoG7eHj0cU3Z_RqvDTQoY"}
      */
-    public static String uploadPic(String imageUrl, FileLocation location) throws IOException, URISyntaxException {
+    public String uploadPic(String imageUrl, FileLocation location)  {
         String result = null;
         try {
             File file = new File(imageUrl);
@@ -223,7 +184,7 @@ public class WeChatPayWrapper {
      * @return
      * @throws IOException
      */
-    public static String getSerialNo(String certPath) throws IOException {
+    public static String getSerialNo(String certPath) {
         X509Certificate certificate = getCertificate(certPath);
         return certificate.getSerialNumber().toString(16).toUpperCase();
     }
@@ -234,20 +195,23 @@ public class WeChatPayWrapper {
      * @param filename 证书文件路径  (required)
      * @return X509证书
      */
-    public static X509Certificate getCertificate(String filename) throws IOException {
+    public static X509Certificate getCertificate(String filename) {
         ClassPathResource resource = new ClassPathResource(filename);
-        InputStream fis = resource.getInputStream();
-        try (BufferedInputStream bis = new BufferedInputStream(fis)) {
-            CertificateFactory cf = CertificateFactory.getInstance("X509");
-            X509Certificate cert = (X509Certificate) cf.generateCertificate(bis);
-            cert.checkValidity();
-            return cert;
-        } catch (CertificateExpiredException e) {
-            throw new RuntimeException("证书已过期", e);
-        } catch (CertificateNotYetValidException e) {
-            throw new RuntimeException("证书尚未生效", e);
-        } catch (CertificateException e) {
-            throw new RuntimeException("无效的证书文件", e);
+        try (InputStream inputStream = resource.getInputStream()) {
+            try (BufferedInputStream bis = new BufferedInputStream(inputStream)) {
+                CertificateFactory cf = CertificateFactory.getInstance("X509");
+                X509Certificate cert = (X509Certificate) cf.generateCertificate(bis);
+                cert.checkValidity();
+                return cert;
+            } catch (CertificateExpiredException e) {
+                throw new RuntimeException("证书已过期", e);
+            } catch (CertificateNotYetValidException e) {
+                throw new RuntimeException("证书尚未生效", e);
+            } catch (CertificateException e) {
+                throw new RuntimeException("无效的证书文件", e);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("读取证书失败", e);
         }
     }
 
@@ -262,7 +226,7 @@ public class WeChatPayWrapper {
      * @return 签名串
      * @throws Exception 异常
      */
-    public static String getToken(String method, String url, String body, String merchantId, String certSerialNo) throws Exception {
+    public static String getToken(String method, String url, String body, String merchantId, String certSerialNo) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         String signStr = "";
         HttpUrl httpurl = HttpUrl.parse(url);
         String nonceStr = UUID.randomUUID().toString().replaceAll("-", "");
@@ -302,7 +266,7 @@ public class WeChatPayWrapper {
      * @return
      * @throws Exception
      */
-    public static String sign(byte[] message, String keyPath) throws Exception {
+    public static String sign(byte[] message, String keyPath) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         Signature sign = Signature.getInstance("SHA256withRSA");
         sign.initSign(getPrivateKey(keyPath));
         sign.update(message);
@@ -315,7 +279,7 @@ public class WeChatPayWrapper {
      * @param filename 私钥文件路径  (required)
      * @return 私钥对象
      */
-    public static PrivateKey getPrivateKey(String filename) throws IOException {
+    public static PrivateKey getPrivateKey(String filename) {
         String content = getContent(filename);
         try {
             String privateKey = content.replace("-----BEGIN PRIVATE KEY-----", "")
@@ -441,8 +405,14 @@ public class WeChatPayWrapper {
      * @throws IOException
      * @throws IllegalBlockSizeException
      */
-    public static String rsaDecryptOAEP(String message) throws IOException, BadPaddingException {
-        return rsaDecryptOAEP(message, getPrivateKey(MCH_PRI_KEY_PATH));
+    public static String rsaDecryptOAEP(String message) {
+        try {
+            return rsaDecryptOAEP(message, getPrivateKey(MCH_PRI_KEY_PATH));
+        } catch (BadPaddingException e) {
+            throw new RuntimeException("解密失败:",e);
+        } catch (IOException e) {
+            throw new RuntimeException("解密失败:",e);
+        }
     }
 
     /**
@@ -452,12 +422,13 @@ public class WeChatPayWrapper {
      * @return
      * @throws IOException
      */
-    public static String getContent(String path) throws IOException {
+    public static String getContent(String path) {
         ClassPathResource resource = new ClassPathResource(path);
-        InputStream inputStream = resource.getInputStream();
+        InputStream inputStream = null;
         BufferedReader br = null;
         StringBuffer sb = null;
         try {
+            inputStream = resource.getInputStream();
             br = new BufferedReader(new InputStreamReader(inputStream, "GBK"));
             sb = new StringBuffer();
             String line = null;
@@ -475,5 +446,142 @@ public class WeChatPayWrapper {
         }
         String data = new String(sb);
         return data;
+    }
+
+    private String sendGet(String arg,String url) throws IOException {
+        url = url + "/" + arg;
+
+        //获取商户证书序列号
+        String serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.MCH_PUB_KEY_PATH);
+
+        //平台证书路径, 获取微信证书序列号
+        serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.WECHATPAY_PUB_KEY_PATH);
+
+        //设置请求头，请求参数并发起请求
+        HttpGet httpGet = new HttpGet(url);
+        httpGet.setHeader("Wechatpay-Serial", serialNo);
+        httpGet.setHeader("Accept", "application/json");
+        httpGet.setHeader("Content-Type", "application/json");
+        httpGet.setHeader("user-agent", WeChatPayWrapper.DEFAULT_USER_AGENT);
+
+        CloseableHttpClient httpClient = getVerifyHttpClient();
+
+        CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
+
+        //解析响应，返回字符串
+        HttpEntity httpResponseEntity = httpResponse.getEntity();
+        String responseEntityStr = EntityUtils.toString(httpResponseEntity);
+        httpResponse.close();
+
+        return responseEntityStr;
+    }
+
+    private String sendGet1(String arg,String url) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException {
+        url = url + "/" + arg;
+
+        //获取商户证书序列号
+        String serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.MCH_PUB_KEY_PATH);
+        String token = WeChatPayWrapper.getToken("GET", url, null, WeChatPayWrapper.MCH_ID, serialNo);
+        String authorization = "WECHATPAY2-SHA256-RSA2048 " + token;
+
+        //平台证书路径, 获取微信证书序列号
+        serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.WECHATPAY_PUB_KEY_PATH);
+
+        //设置请求头，请求参数并发起请求
+        HttpGet httpGet = new HttpGet(url);
+        httpGet.setHeader("Wechatpay-Serial", serialNo);
+        httpGet.setHeader("Accept", "application/json");
+        httpGet.setHeader("Content-Type", "application/json");
+        httpGet.setHeader("user-agent", WeChatPayWrapper.DEFAULT_USER_AGENT);
+        httpGet.setHeader("Authorization", authorization);
+
+        HttpClientBuilder httpClientBuilder = HttpClients.custom();
+        CloseableHttpClient httpClient = httpClientBuilder.build();
+
+        CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
+
+        //解析响应，返回字符串
+        HttpEntity httpResponseEntity = httpResponse.getEntity();
+        String responseEntityStr = EntityUtils.toString(httpResponseEntity);
+        httpResponse.close();
+
+        return responseEntityStr;
+    }
+
+    private String sendPost(String requestParams, String url) throws IOException {
+        //微信证书路径，获取微信证书序列号
+        String serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.WECHATPAY_PUB_KEY_PATH);
+
+        //组装请求头、请求参数并发起请求
+        HttpPost httpPost = new HttpPost(url);
+        httpPost.setHeader("Wechatpay-Serial", serialNo);
+        httpPost.setHeader("Accept", "application/json");
+        httpPost.setHeader("Content-Type", "application/json");
+        //httpPost.setHeader("user-agent", WeChatPayWrapper.DEFAULT_USER_AGENT);
+        httpPost.setEntity(new StringEntity(requestParams, ContentType.create("application/json", "utf-8")));
+        CloseableHttpClient httpClient = getVerifyHttpClient();
+        CloseableHttpResponse httpResponse = httpClient.execute(httpPost);
+
+        //获取响应文本
+        HttpEntity httpResponseEntity = httpResponse.getEntity();
+
+        AutoUpdateCertificatesVerifier verifier = new AutoUpdateCertificatesVerifier(
+                new WechatPay2Credentials(MCH_ID, new PrivateKeySigner(getSerialNo(MCH_PUB_KEY_PATH), getPrivateKey(MCH_PRI_KEY_PATH))),
+                API_V3KEY.getBytes("utf-8"));
+
+        String responseEntityStr = EntityUtils.toString(httpResponseEntity);
+        httpResponse.close();
+
+        return responseEntityStr;
+    }
+
+    private String sendPost1(String requestParams, String url) throws IOException, NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        //获取商户证书序列号
+        String serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.MCH_PUB_KEY_PATH);
+
+        String token = WeChatPayWrapper.getToken("POST", url, requestParams, MCH_ID, serialNo);
+        String authorization = "WECHATPAY2-SHA256-RSA2048 " + token;
+
+        //微信证书路径，获取微信证书序列号
+        serialNo = WeChatPayWrapper.getSerialNo(WeChatPayWrapper.WECHATPAY_PUB_KEY_PATH);
+
+        //组装请求头、请求参数并发起请求
+        HttpPost httpPost = new HttpPost(url);
+        httpPost.setHeader("Wechatpay-Serial", serialNo);
+        httpPost.setHeader("Accept", "application/json");
+        httpPost.setHeader("Content-Type", "application/json");
+        httpPost.setHeader("user-agent", WeChatPayWrapper.DEFAULT_USER_AGENT);
+        //如果使用原生的HttpClientBuilder构造 httpclient 需要手动添加
+        httpPost.setHeader("Authorization", authorization);
+        httpPost.setEntity(new StringEntity(requestParams, ContentType.create("application/json", "utf-8")));
+
+        HttpClientBuilder httpClientBuilder = HttpClients.custom();
+        CloseableHttpClient httpClient = httpClientBuilder.build();
+
+
+        CloseableHttpResponse httpResponse = httpClient.execute(httpPost);
+
+        //获取响应文本
+        HttpEntity httpResponseEntity = httpResponse.getEntity();
+
+        AutoUpdateCertificatesVerifier verifier = new AutoUpdateCertificatesVerifier(
+                new WechatPay2Credentials(MCH_ID, new PrivateKeySigner(getSerialNo(MCH_PUB_KEY_PATH), getPrivateKey(MCH_PRI_KEY_PATH))),
+                API_V3KEY.getBytes("utf-8"));
+
+        String responseEntityStr = EntityUtils.toString(httpResponseEntity);
+        httpResponse.close();
+
+        return responseEntityStr;
+    }
+    private static CloseableHttpClient getVerifyHttpClient() {
+        ArrayList<X509Certificate> certificates = new ArrayList<>();
+        certificates.add(getCertificate(WECHATPAY_PUB_KEY_PATH));
+
+        CloseableHttpClient httpClient = WechatPayHttpClientBuilder.create()
+                .withMerchant(MCH_ID, getSerialNo(MCH_PUB_KEY_PATH), getPrivateKey(MCH_PRI_KEY_PATH))
+                .withWechatpay(certificates)
+                .build();
+
+        return httpClient;
     }
 }
