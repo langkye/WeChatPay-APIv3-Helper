@@ -26,6 +26,12 @@ public class WeChatPayUtilHelper {
         //queryStatusByApplymentIdHelper();
         //queryStatusByBusinessCodeHelper();
 
+        //修改结算帐号API
+        modifySettlementHelper();
+
+        //查询结算账户API
+        //querySettlementHelper();
+
         //图片上传
         //uploadPicHelper();
 
@@ -33,7 +39,7 @@ public class WeChatPayUtilHelper {
         //rsaEncytpAndDecrypt();
 
         //获取证书序列号
-        getCertSerialNo();
+        //getCertSerialNo();
     }
 
 
@@ -75,6 +81,30 @@ public class WeChatPayUtilHelper {
         final WeChatPayUtil weChatPayUtil = new WeChatPayUtil();
         String applymentStatus = weChatPayUtil.applymentStatus("APPLYMENT_20210313065716", ApplymentQueryType.BUSINESS_CODE);
         System.out.println("applymentStatus = " + applymentStatus);
+    }
+
+    /***
+     * 接口示例：
+     *      - 特约商户进件: 修改结算帐号API
+     */
+    public static void modifySettlementHelper(){
+        final WeChatPayUtil weChatPayUtil = new WeChatPayUtil();
+        final ModifySettlement settlement = BeanHelper.convertModifySettlement();
+        final String modifySettlement = weChatPayUtil.modifySettlement(settlement);
+        System.out.println("modifySettlement = " + modifySettlement);
+    }
+
+
+    /***
+     * 接口示例：
+     *      - 特约商户进件: 查询结算账户API
+     *      返回示例：
+     *          applymentStatus = {"account_type": "ACCOUNT_TYPE_BUSINESS","account_bank": "工商银行","bank_name": "施秉县农村信用合作联社城关信用社","bank_branch_id": "402713354941","account_number": "***************8678","verify_result": "VERIFY_SUCCESS"}
+     */
+    public static void querySettlementHelper(){
+        final WeChatPayUtil weChatPayUtil = new WeChatPayUtil();
+        final String querySettlement = weChatPayUtil.querySettlement("12345");
+        System.out.println("querySettlement = " + querySettlement);
     }
 
 

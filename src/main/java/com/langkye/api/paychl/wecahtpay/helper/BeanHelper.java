@@ -94,6 +94,18 @@ public class BeanHelper {
         return root;
     }
 
+    public static ModifySettlement convertModifySettlement(){
+        final ModifySettlement settlement = new ModifySettlement();
+        settlement.setSubMchid("1511101111");
+        settlement.setAccountType("ACCOUNT_TYPE_BUSINESS");
+        settlement.setAccountBank("工商银行");
+        settlement.setBankAddressCode("110000");
+        settlement.setBankName("施秉县农村信用合作联社城关信用社");
+        settlement.setBankBranchId("402713354941");
+        settlement.setAccountNumber("6217888899923334599");
+        return settlement;
+    }
+
     /**
      * 补充材料	addition_info	object	否	body 根据实际审核情况，额外要求商家提供指定的补充资料。
      */

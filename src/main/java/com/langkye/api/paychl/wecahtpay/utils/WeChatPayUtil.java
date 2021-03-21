@@ -1,5 +1,6 @@
 package com.langkye.api.paychl.wecahtpay.utils;
 
+import com.langkye.api.paychl.wecahtpay.bean.ModifySettlement;
 import com.langkye.api.paychl.wecahtpay.bean.Root;
 import com.langkye.api.paychl.wecahtpay.common.ApplymentQueryType;
 import com.langkye.api.paychl.wecahtpay.common.FileLocation;
@@ -18,16 +19,36 @@ public class WeChatPayUtil {
     }
 
     /**
-     * 查询申请状态:通过业务申请编号查询申请状态
+     * 特约商户进件: 查询申请状态
+     *      通过【业务申请编号】或【申请单号】查询申请状态
+     *
      *
      * @param arg    业务申请编号(business_code) | 申请单号(applyment_id)
      * @param aqType 查询方式 : BUSINESS_CODE | APPLYMENT_ID
-     * @return
-     * @throws Exception
+     * @return 申请提交结果
      * @see ApplymentQueryType
+     * @doc https://pay.weixin.qq.com/wiki/doc/apiv3/wxpay/tool/applyment4sub/chapter3_2.shtml
      */
     public String applymentStatus(String arg, ApplymentQueryType aqType){
         return weChatPayWrapper.applymentStatus(arg, aqType);
+    }
+
+    /**
+     * 特约商户进件: 修改结算帐号API
+     * @param modifySettlement 修改结算账号bean
+     * @see ModifySettlement
+     * @doc https://pay.weixin.qq.com/wiki/doc/apiv3/wxpay/tool/applyment4sub/chapter3_3.shtml
+     */
+    public String modifySettlement(ModifySettlement modifySettlement){
+        return weChatPayWrapper.modifySettlement(modifySettlement);
+    }
+
+    /**
+     * 特约商户进件: 查询结算账户API
+     * @doc https://pay.weixin.qq.com/wiki/doc/apiv3/wxpay/tool/applyment4sub/chapter3_4.shtml
+     */
+    public String querySettlement(String subMchid){
+        return weChatPayWrapper.querySettlement(subMchid);
     }
 
     /***
