@@ -147,6 +147,9 @@ public class WeChatPayWrapper {
         String url = "";
         final String subMchid = modifySettlement.getSubMchid();
 
+        //移除subMchid属性，该参数作为path参数
+        modifySettlement.setSubMchid(null);
+
         //拼接url
         try {
             final String[] split = WECHATPAY_MODIFY_SETTLEMENT_URL.split("\\{sub_mchid\\}");
