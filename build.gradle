@@ -48,8 +48,31 @@ dependencies {
     //Json工具类: fastjson
     implementation group: 'com.alibaba', name: 'fastjson', version: '1.2.75'
 
+    /* mark：[1]
+     * if your project build [not] on springboot
+     * 如果你的项目不是构建在springboot上，你必须引入如下hibernate-validator校验依赖：基于非springboot的项目构建，使用校验你需要引入（import javax.validation.*;）
+     * notes：mark:[1] and mark:[2] The verification dependencies introduced by the two builds are different. If you change the build method, please rebuild your project, delete the wrong import, and import the correct dependency package
+     * 注意：mark：[1] 和 mark：[2] 两种构建所引入的校验依赖不一样，如果你更改构建方式，请重新rebuild你的项目，将错误的import删除，并import正确的依赖包
+     **/
     //spring-core
-    implementation group: 'org.springframework', name: 'spring-core', version: '5.2.13.RELEASE'
+    implementation group: 'org.springframework', name: 'spring-core', version: '5.3.7'
+    // https://mvnrepository.com/artifact/org.hibernate.validator/hibernate-validator
+    implementation group: 'org.hibernate.validator', name: 'hibernate-validator', version: '7.0.1.Final'
+    implementation group: 'jakarta.el', name: 'jakarta.el-api', version: '4.0.0'
+    implementation group: 'org.glassfish', name: 'jakarta.el', version: '4.0.1'
+
+    /* mark：[2]
+     * if your project build on springboot
+     * 如果你的项目构建在springboot上，你只需要引入如下依赖：基于springboot的项目构建，使用校验你需要引入（import javax.validation.*;）
+     * notes：mark:[1] and mark:[2] The verification dependencies introduced by the two builds are different. If you change the build method, please rebuild your project, delete the wrong import, and import the correct dependency package
+     * 注意：mark：[1] 和 mark：[2] 两种构建所引入的校验依赖不一样，如果你更改构建方式，请重新rebuild你的项目，将错误的import删除，并import正确的依赖包
+     **/
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter
+    //implementation group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.5.0'
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation
+    //implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '2.5.0'
+
+
 
     //commons-lang3工具类：StringUtils
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
