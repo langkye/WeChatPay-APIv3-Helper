@@ -7,7 +7,7 @@
 > 
 > 如何查看证书序列号？
 > 1. https://wechatpay-api.gitbook.io/wechatpay-api-v3/chang-jian-wen-ti/zheng-shu-xiang-guan#ru-he-cha-kan-zheng-shu-xu-lie-hao
-> 2. 你可以在`src/main/java/com/langkye/api/paychl/wecahtpay/helper/WeChatPayUtilHelper.java`中进行查看使用示例。
+> 2. 你可以在`src/main/java/com/langkye/api/paychl/wechatpay/applyment/helper/WeChatPayUtilHelper.java`中进行查看使用示例。
 
 **注意**：本项目是基于`gradle`进行构建, 如果你想使用maven进行构建, 那么：
 1. 你可以安装gradle, 然后在本项目根目录下执行`gradle writeNewPom`，然后会在build目录下生生成`pom.xml`文件。
