@@ -1,9 +1,6 @@
 package com.langkye.api.paychl.wechatpay.common;
 
 import com.wechat.pay.contrib.apache.httpclient.WechatPayHttpClientBuilder;
-import com.wechat.pay.contrib.apache.httpclient.auth.AutoUpdateCertificatesVerifier;
-import com.wechat.pay.contrib.apache.httpclient.auth.PrivateKeySigner;
-import com.wechat.pay.contrib.apache.httpclient.auth.WechatPay2Credentials;
 import okhttp3.HttpUrl;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
@@ -444,14 +441,6 @@ public class WeChatPayUtil {
         //获取响应文本
         HttpEntity httpResponseEntity = httpResponse.getEntity();
 
-        try {
-            AutoUpdateCertificatesVerifier verifier = new AutoUpdateCertificatesVerifier(
-                    new WechatPay2Credentials(MCH_ID, new PrivateKeySigner(getSerialNo(MCH_PUB_KEY_PATH), getPrivateKey(MCH_PRI_KEY_PATH))),
-                    API_V3KEY.getBytes("utf-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-
         String responseEntityStr = null;
         try {
             responseEntityStr = EntityUtils.toString(httpResponseEntity);
@@ -495,10 +484,6 @@ public class WeChatPayUtil {
 
         //获取响应文本
         HttpEntity httpResponseEntity = httpResponse.getEntity();
-
-        AutoUpdateCertificatesVerifier verifier = new AutoUpdateCertificatesVerifier(
-                new WechatPay2Credentials(MCH_ID, new PrivateKeySigner(getSerialNo(MCH_PUB_KEY_PATH), getPrivateKey(MCH_PRI_KEY_PATH))),
-                API_V3KEY.getBytes("utf-8"));
 
         String responseEntityStr = EntityUtils.toString(httpResponseEntity);
         httpResponse.close();
