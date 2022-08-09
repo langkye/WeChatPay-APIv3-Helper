@@ -95,8 +95,10 @@ public class WeChatPayUtil {
             } catch (CertificateException e) {
                 throw new RuntimeException("无效的证书文件", e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("读取证书失败", e);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("读取证书失败：文件[" + filename + "]不存在", e);
+        } catch (Exception e) {
+            throw new RuntimeException("读取证书失败，未知异常", e);
         }
     }
 
